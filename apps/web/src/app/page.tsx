@@ -74,7 +74,7 @@ function MiniInstallModal({ server, onClose }: { server: MCPServerMeta; onClose:
     `echo "✅ ${server.name} 설치 완료!"`;
 
   const envFlags = envVars.map(v => `-e ${v.key}=YOUR_${v.key}`).join(' ');
-  const codeCmd  = `claude mcp add ${server.id}${envFlags ? ' ' + envFlags : ''} -- npx -y ${pkg}`;
+  const codeCmd  = `claude mcp add ${server.id}${envFlags ? ' ' + envFlags : ''} -- npx --yes ${pkg}`;
 
   const copy = (text: string) => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
   const CopyBtn = ({ text }: { text: string }) => (
