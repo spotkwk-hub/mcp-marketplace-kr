@@ -1,0 +1,23 @@
+{
+  "name": "@mcp-kr/smartstore",
+  "version": "0.1.0",
+  "description": "네이버 스마트스토어 Connect API MCP 서버",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-smartstore": "dist/index.js"
+  },
+  "scripts": {
+    "dev":   "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.19.4",
+    "typescript": "^5"
+  }
+}

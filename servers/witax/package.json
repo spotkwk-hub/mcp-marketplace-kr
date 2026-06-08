@@ -1,0 +1,23 @@
+{
+  "name": "@mcp-kr/witax",
+  "version": "0.1.0",
+  "description": "위택스 지방세 API MCP 서버",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "mcp-witax": "dist/index.js"
+  },
+  "scripts": {
+    "dev":   "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.19.4",
+    "typescript": "^5"
+  }
+}
