@@ -11,7 +11,7 @@ const MVP_FEATURES = [
   { id: 'settle',   label: '공급자 정산', done: false, desc: '원화 정산 + 세금계산서 자동 발행' },
   { id: 'register', label: '서버 등록',   done: true,  desc: '공급자 MCP 서버 제출 폼 (5단계 검증 + 인증 API 확인)' },
 ];
-import { ArrowRight, CheckCircle, Circle, Search, Package, CreditCard, BarChart2, UserPlus, Star, Sprout, Download, Shield, ChevronDown, ChevronUp, Copy, Check, X, ExternalLink } from 'lucide-react';
+import { ArrowRight, CheckCircle, Circle, Search, Package, CreditCard, BarChart2, UserPlus, Star, Sprout, Download, Shield, ChevronDown, ChevronUp, Copy, Check, X, ExternalLink, Zap, BookOpen, Terminal, Monitor, Code2, Globe } from 'lucide-react';
 import Header from '@/components/Header';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -40,17 +40,45 @@ const CERT_COLORS: Record<string, string> = {
   'CC인증': 'bg-purple-100 text-purple-700', 'CSAP': 'bg-emerald-100 text-emerald-700',
 };
 
+type MiniClient = 'desktop' | 'code' | 'web';
+type MiniTab = 'oneclick' | 'manual';
+type MiniOS = 'windows' | 'mac';
+
 function MiniInstallModal({ server, onClose }: { server: MCPServerMeta; onClose: () => void }) {
+  const [client, setClient] = useState<MiniClient>('desktop');
+  const [tab, setTab]       = useState<MiniTab>('oneclick');
+  const [os, setOs]         = useState<MiniOS>('windows');
   const [copied, setCopied] = useState(false);
-  const config = JSON.stringify({
-    mcpServers: {
-      [server.id]: {
-        command: 'npx',
-        args: ['-y', server.npmPackage ?? `@mcp-kr/${server.id}`],
-        ...(server.pricing !== 'free' && { env: { API_KEY: 'YOUR_API_KEY_HERE' } }),
-      },
-    },
+
+  const pkg = server.npmPackage ?? `@mcp-kr/${server.id}`;
+  const hasPaid = server.pricing !== 'free';
+
+  const desktopConfig = JSON.stringify({
+    mcpServers: { [server.id]: { command: 'npx', args: ['-y', pkg], ...(hasPaid && { env: { API_KEY: 'YOUR_API_KEY_HERE' } }) } },
   }, null, 2);
+
+  const psCmd =
+    `$cfg="$env:APPDATA\\Claude\\claude_desktop_config.json"; ` +
+    `$obj=if(Test-Path $cfg){Get-Content $cfg -Raw|ConvertFrom-Json}else{[pscustomobject]@{mcpServers=[pscustomobject]@{}}}; ` +
+    `if(-not $obj.mcpServers){$obj|Add-Member -NotePropertyName mcpServers -NotePropertyValue ([pscustomobject]@{})}; ` +
+    `$obj.mcpServers|Add-Member -NotePropertyName "${server.id}" -NotePropertyValue (ConvertFrom-Json '{"command":"npx","args":["-y","${pkg}"]${hasPaid ? `,"env":{"API_KEY":"YOUR_API_KEY_HERE"}` : ""}}') -Force; ` +
+    `$obj|ConvertTo-Json -Depth 10|Set-Content $cfg -Encoding UTF8; Write-Host "✅ ${server.name} 설치 완료!"`;
+
+  const shCmd =
+    `CFG="$HOME/Library/Application Support/Claude/claude_desktop_config.json"; ` +
+    `mkdir -p "$(dirname "$CFG")"; [ -f "$CFG" ] || echo '{"mcpServers":{}}' > "$CFG"; ` +
+    `python3 -c "import json; d=json.load(open('$CFG')); d.setdefault('mcpServers',{})['${server.id}']=${JSON.stringify({ command: 'npx', args: ['-y', pkg], ...(hasPaid && { env: { API_KEY: 'YOUR_API_KEY_HERE' } }) })}; json.dump(d,open('$CFG','w'),ensure_ascii=False,indent=2)"; ` +
+    `echo "✅ ${server.name} 설치 완료!"`;
+
+  const codeCmd = `claude mcp add ${server.id}${hasPaid ? ' -e API_KEY=YOUR_API_KEY_HERE' : ''} npx -- -y ${pkg}`;
+
+  const copy = (text: string) => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
+  const CopyBtn = ({ text }: { text: string }) => (
+    <button onClick={() => copy(text)} className="absolute top-3 right-3 flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2.5 py-1.5 rounded-lg transition-colors">
+      {copied ? <><Check className="w-3.5 h-3.5 text-green-400" />복사됨</> : <><Copy className="w-3.5 h-3.5" />복사</>}
+    </button>
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
@@ -58,30 +86,105 @@ function MiniInstallModal({ server, onClose }: { server: MCPServerMeta; onClose:
           <div><h2 className="font-bold text-gray-900 text-lg">{server.name} 설치</h2><p className="text-xs text-gray-500 mt-0.5">v{server.version} · {server.author}</p></div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
         </div>
+
         <div className="px-6 py-5 space-y-5">
-          <ol className="space-y-2.5">
-            {[{ label: 'Claude Desktop 설치', href: 'https://claude.ai/download' }, { label: 'config.json에 아래 설정 추가', href: null }, { label: 'Claude Desktop 재시작', href: null }].map((s, i) => (
-              <li key={i} className="flex items-start gap-3 text-sm text-gray-700">
-                <span className="w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
-                {s.href ? <a href={s.href} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline flex items-center gap-1">{s.label} <ExternalLink className="w-3.5 h-3.5" /></a> : <span>{s.label}</span>}
-              </li>
-            ))}
-          </ol>
-          <div className="text-xs text-gray-500 bg-gray-50 rounded-xl p-3 space-y-1">
-            <p className="font-semibold text-gray-600">config.json 위치</p>
-            <p>🪟 Windows: <code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded">%APPDATA%\Claude\claude_desktop_config.json</code></p>
-            <p>🍎 macOS: <code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded">~/Library/Application Support/Claude/</code></p>
+          {/* 클라이언트 선택 */}
+          <div>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">클라이언트 선택</p>
+            <div className="flex gap-1.5">
+              {([
+                ['desktop', <Monitor key="d" className="w-3.5 h-3.5" />, 'Claude Desktop', '데스크탑 앱'],
+                ['code',    <Code2   key="c" className="w-3.5 h-3.5" />, 'Claude Code',    'CLI 도구'],
+                ['web',     <Globe   key="w" className="w-3.5 h-3.5" />, 'Claude.ai',      '웹 브라우저'],
+              ] as [MiniClient, React.ReactNode, string, string][]).map(([key, icon, label, desc]) => (
+                <button key={key} onClick={() => { setClient(key); setTab('oneclick'); }}
+                  className={`flex-1 flex flex-col items-center gap-1 py-2.5 rounded-xl border text-xs font-semibold transition-colors ${client === key ? 'bg-blue-50 border-blue-400 text-blue-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'}`}>
+                  {icon}<span>{label}</span>
+                  <span className={`font-normal ${client === key ? 'text-blue-500' : 'text-gray-400'}`}>{desc}</span>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="relative">
-            <pre className="bg-gray-900 text-green-400 text-xs rounded-xl p-4 overflow-x-auto leading-relaxed font-mono">{config}</pre>
-            <button onClick={() => { navigator.clipboard.writeText(config); setCopied(true); setTimeout(() => setCopied(false), 2000); }} className="absolute top-3 right-3 flex items-center gap-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs px-2.5 py-1.5 rounded-lg transition-colors">
-              {copied ? <><Check className="w-3.5 h-3.5 text-green-400" /> 복사됨</> : <><Copy className="w-3.5 h-3.5" /> 복사</>}
-            </button>
-          </div>
-          {server.pricing !== 'free' && (
+
+          {/* Claude Desktop */}
+          {client === 'desktop' && (
+            <>
+              <div className="flex gap-1">
+                {([['oneclick', <Zap key="z" className="w-3.5 h-3.5" />, '원클릭 설치'], ['manual', <BookOpen key="b" className="w-3.5 h-3.5" />, '수동 설치']] as const).map(([t, icon, label]) => (
+                  <button key={t} onClick={() => setTab(t as MiniTab)}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${tab === t ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}>
+                    {icon}{label}
+                  </button>
+                ))}
+              </div>
+              {tab === 'oneclick' && (
+                <>
+                  <div className="flex gap-2">
+                    {(['windows', 'mac'] as MiniOS[]).map(o => (
+                      <button key={o} onClick={() => setOs(o)}
+                        className={`flex-1 py-2 rounded-xl text-sm font-semibold border transition-colors ${os === o ? 'bg-blue-50 border-blue-400 text-blue-700' : 'border-gray-200 text-gray-500'}`}>
+                        {o === 'windows' ? '🪟 Windows' : '🍎 macOS'}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl p-3.5">
+                    <Terminal className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                    <p className="text-xs text-blue-800">{os === 'windows' ? 'PowerShell' : '터미널'}을 열고 아래 명령어를 붙여넣으세요.</p>
+                  </div>
+                  <div className="relative">
+                    <pre className="bg-gray-900 text-green-400 text-xs rounded-xl p-4 overflow-x-auto leading-relaxed font-mono whitespace-pre-wrap break-all">{os === 'windows' ? psCmd : shCmd}</pre>
+                    <CopyBtn text={os === 'windows' ? psCmd : shCmd} />
+                  </div>
+                </>
+              )}
+              {tab === 'manual' && (
+                <>
+                  <div className="text-xs text-gray-500 bg-gray-50 rounded-xl p-3 space-y-1">
+                    <p className="font-semibold text-gray-600">config.json 위치</p>
+                    <p>🪟 Windows: <code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded">%APPDATA%\Claude\claude_desktop_config.json</code></p>
+                    <p>🍎 macOS: <code className="bg-white border border-gray-200 px-1.5 py-0.5 rounded">~/Library/Application Support/Claude/</code></p>
+                  </div>
+                  <div className="relative">
+                    <pre className="bg-gray-900 text-green-400 text-xs rounded-xl p-4 overflow-x-auto leading-relaxed font-mono">{desktopConfig}</pre>
+                    <CopyBtn text={desktopConfig} />
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
+          {/* Claude Code */}
+          {client === 'code' && (
+            <>
+              <div className="flex items-start gap-3 bg-violet-50 border border-violet-200 rounded-xl p-3.5">
+                <Terminal className="w-4 h-4 text-violet-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-violet-800">Claude Code CLI가 설치되어 있으면 아래 명령어로 바로 등록합니다.</p>
+              </div>
+              <div className="relative">
+                <pre className="bg-gray-900 text-green-400 text-xs rounded-xl p-4 font-mono">{codeCmd}</pre>
+                <CopyBtn text={codeCmd} />
+              </div>
+            </>
+          )}
+
+          {/* Claude.ai 웹 */}
+          {client === 'web' && (
+            <>
+              <div className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-3.5">
+                <Globe className="w-4 h-4 text-emerald-600 mt-0.5 shrink-0" />
+                <p className="text-xs text-emerald-800">Claude.ai 웹은 원격 MCP 서버(HTTPS)를 UI에서 직접 등록합니다. Pro·Team·Enterprise 플랜 필요.</p>
+              </div>
+              <div className="relative">
+                <pre className="bg-gray-900 text-green-400 text-xs rounded-xl p-4 font-mono">{`https://mcp.kr/servers/${server.id}`}</pre>
+                <CopyBtn text={`https://mcp.kr/servers/${server.id}`} />
+              </div>
+            </>
+          )}
+
+          {hasPaid && client !== 'web' && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
               <p className="font-semibold mb-1">🔑 API 키 필요</p>
-              <p className="text-xs leading-relaxed"><code className="bg-white px-1 rounded">YOUR_API_KEY_HERE</code>를 실제 API 키로 교체하세요. <a href={server.apiDocs} target="_blank" rel="noopener noreferrer" className="underline font-medium">공식 문서</a>에서 발급받을 수 있습니다.</p>
+              <p className="text-xs"><code className="bg-white px-1 rounded">YOUR_API_KEY_HERE</code>를 실제 키로 교체하세요. <a href={server.apiDocs} target="_blank" rel="noopener noreferrer" className="underline font-medium">공식 문서</a>에서 발급.</p>
             </div>
           )}
         </div>
