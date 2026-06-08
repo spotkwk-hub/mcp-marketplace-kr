@@ -1,0 +1,21 @@
+{
+  "name": "@mcp-kr/publicdata-mcp",
+  "version": "0.1.0",
+  "description": "행정안전부 공공데이터포털 MCP 서버 — 기상청 날씨, 버스, 지하철, 아파트실거래가, 인구통계를 Claude에서 조회합니다.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": { "mcp-publicdata": "dist/index.js" },
+  "files": ["dist"],
+  "engines": { "node": ">=18" },
+  "keywords": ["mcp", "publicdata", "공공데이터", "기상청", "버스", "지하철", "claude", "korean"],
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/spotkwk-hub/mcp-marketplace-kr.git", "directory": "servers/publicdata" },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": { "@modelcontextprotocol/sdk": "^1.12.1" },
+  "devDependencies": { "@types/node": "^20", "tsx": "^4.19.4", "typescript": "^5" }
+}

@@ -74,6 +74,9 @@ export const REGISTRY: MCPServerMeta[] = [
     certs: ['CC인증'],
     apiDocs: 'https://www.data.go.kr',
     npmPackage: '@mcp-kr/publicdata-mcp',
+    envVars: [
+      { key: 'PUBLIC_DATA_API_KEY', description: '공공데이터포털 서비스 인증키', required: true, docsUrl: 'https://www.data.go.kr' },
+    ],
     featured: true,
     updatedAt: '2026-06-07',
     isSeed: true,
@@ -102,6 +105,9 @@ export const REGISTRY: MCPServerMeta[] = [
     certs: ['ISMS-P', 'CC인증'],
     apiDocs: 'https://www.g2b.go.kr',
     npmPackage: '@mcp-kr/g2b-mcp',
+    envVars: [
+      { key: 'G2B_API_KEY', description: '나라장터 Open API 인증키', required: true, docsUrl: 'https://www.g2b.go.kr' },
+    ],
     featured: true,
     updatedAt: '2026-06-07',
     isSeed: true,
@@ -266,6 +272,10 @@ export const REGISTRY: MCPServerMeta[] = [
     certs: ['ISMS-P'],
     apiDocs: 'https://ipartner.douzone.com',
     npmPackage: '@mcp-kr/douzone-icube-mcp',
+    envVars: [
+      { key: 'DOUZONE_API_KEY',    description: '더존 iCUBE API 키',     required: true,  docsUrl: 'https://ipartner.douzone.com' },
+      { key: 'DOUZONE_COMPANY_CD', description: '더존 iCUBE 회사 코드', required: true,  docsUrl: 'https://ipartner.douzone.com' },
+    ],
     featured: true,
     updatedAt: '2026-06-01',
     isSeed: true,
@@ -295,6 +305,9 @@ export const REGISTRY: MCPServerMeta[] = [
     certs: ['ISMS-P', 'CC인증'],
     apiDocs: 'https://www.hometax.go.kr',
     npmPackage: '@mcp-kr/hometax-mcp',
+    envVars: [
+      { key: 'HOMETAX_API_KEY', description: '홈택스 Open API 인증키', required: true, docsUrl: 'https://www.hometax.go.kr' },
+    ],
     featured: true,
     updatedAt: '2026-04-10',
     isSeed: true,

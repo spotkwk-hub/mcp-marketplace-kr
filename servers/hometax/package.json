@@ -1,0 +1,21 @@
+{
+  "name": "@mcp-kr/hometax-mcp",
+  "version": "0.1.0",
+  "description": "국세청 홈택스 Open API MCP 서버 — 사업자확인, 전자세금계산서, 부가세 신고 데이터를 Claude에서 자동화합니다.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": { "mcp-hometax": "dist/index.js" },
+  "files": ["dist"],
+  "engines": { "node": ">=18" },
+  "keywords": ["mcp", "hometax", "홈택스", "세금계산서", "부가세", "claude", "korean"],
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/spotkwk-hub/mcp-marketplace-kr.git", "directory": "servers/hometax" },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": { "@modelcontextprotocol/sdk": "^1.12.1" },
+  "devDependencies": { "@types/node": "^20", "tsx": "^4.19.4", "typescript": "^5" }
+}

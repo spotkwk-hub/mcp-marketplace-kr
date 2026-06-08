@@ -1,0 +1,21 @@
+{
+  "name": "@mcp-kr/g2b-mcp",
+  "version": "0.1.0",
+  "description": "조달청 나라장터(G2B) MCP 서버 — 입찰공고, 낙찰정보, 계약현황, 사전규격을 Claude에서 조회합니다.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": { "mcp-g2b": "dist/index.js" },
+  "files": ["dist"],
+  "engines": { "node": ">=18" },
+  "keywords": ["mcp", "g2b", "나라장터", "입찰", "조달청", "claude", "korean"],
+  "license": "MIT",
+  "repository": { "type": "git", "url": "https://github.com/spotkwk-hub/mcp-marketplace-kr.git", "directory": "servers/g2b" },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": { "@modelcontextprotocol/sdk": "^1.12.1" },
+  "devDependencies": { "@types/node": "^20", "tsx": "^4.19.4", "typescript": "^5" }
+}
