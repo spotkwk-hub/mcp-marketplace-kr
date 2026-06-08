@@ -47,6 +47,15 @@ publish 명령어: `npm publish --access=public` (Granular Token with "Bypass 2F
 
 ---
 
+## 알려진 함정 (Known Gotchas)
+
+### registry dist는 gitignore — Vercel이 항상 재빌드
+- `packages/registry/dist/`는 `.gitignore` 대상이라 git에 커밋 불가
+- Vercel buildCommand에 `npm run build --workspace=packages/registry`가 포함되어 있어 배포 시 자동 재빌드됨
+- **로컬 dev 서버**: `npm run dev` 전에 `npm run build --workspace=packages/registry` 필수 (dist가 오래됐으면 envVars 등 신규 필드 누락)
+
+---
+
 ## Vercel 배포
 
 - `vercel.json` 위치: 레포 루트
@@ -110,3 +119,5 @@ mcp-marketplace-kr/
 | 2026-06-08 | Vercel 프로덕션 배포 |
 | 2026-06-08 | 신규 4개 서버 생성 + publish (hometax, publicdata, g2b, douzone-icube) |
 | 2026-06-08 | Vercel 재배포 (envVars 반영) |
+| 2026-06-08 | 버그 수정: registry dist 미빌드로 envVars 누락 → Vercel 재배포로 해결 |
+| 2026-06-08 | UI 개선: 설치 모달 '환경 변수 설정 필요' 섹션 배경색 강조 (amber-50 → amber-400) |
