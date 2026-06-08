@@ -43,26 +43,33 @@ function InstallModal({ server, onClose }: { server: MCPServerMeta; onClose: () 
   const [copied, setCopied] = useState(false);
 
   const pkg = server.npmPackage ?? `@mcp-kr/${server.id}`;
-  const hasPaid = server.pricing !== 'free';
+  const envVars = server.envVars ?? [];
+  const envObj  = envVars.reduce<Record<string, string>>((acc, v) => ({ ...acc, [v.key]: `YOUR_${v.key}` }), {});
+  const hasEnv  = envVars.length > 0;
 
   const desktopConfig = JSON.stringify({
-    mcpServers: { [server.id]: { command: 'npx', args: ['-y', pkg], ...(hasPaid && { env: { API_KEY: 'YOUR_API_KEY_HERE' } }) } },
+    mcpServers: { [server.id]: { command: 'npx', args: ['-y', pkg], ...(hasEnv && { env: envObj }) } },
   }, null, 2);
 
+  const psEnv = hasEnv
+    ? Object.entries(envObj).map(([k, v]) => `"${k}":"${v}"`).join(',')
+    : '';
   const psCmd =
     `$cfg="$env:APPDATA\\Claude\\claude_desktop_config.json"; ` +
     `$obj=if(Test-Path $cfg){Get-Content $cfg -Raw|ConvertFrom-Json}else{[pscustomobject]@{mcpServers=[pscustomobject]@{}}}; ` +
     `if(-not $obj.mcpServers){$obj|Add-Member -NotePropertyName mcpServers -NotePropertyValue ([pscustomobject]@{})}; ` +
-    `$obj.mcpServers|Add-Member -NotePropertyName "${server.id}" -NotePropertyValue (ConvertFrom-Json '{"command":"npx","args":["-y","${pkg}"]${hasPaid ? `,"env":{"API_KEY":"YOUR_API_KEY_HERE"}` : ""}}') -Force; ` +
+    `$obj.mcpServers|Add-Member -NotePropertyName "${server.id}" -NotePropertyValue (ConvertFrom-Json '{"command":"npx","args":["-y","${pkg}"]${hasEnv ? `,"env":{${psEnv}}` : ""}}') -Force; ` +
     `$obj|ConvertTo-Json -Depth 10|Set-Content $cfg -Encoding UTF8; Write-Host "✅ ${server.name} 설치 완료! Claude Desktop을 재시작하세요."`;
 
+  const shEnvObj = hasEnv ? { ...envObj } : undefined;
   const shCmd =
     `CFG="$HOME/Library/Application Support/Claude/claude_desktop_config.json"; ` +
     `mkdir -p "$(dirname "$CFG")"; [ -f "$CFG" ] || echo '{"mcpServers":{}}' > "$CFG"; ` +
-    `python3 -c "import json; d=json.load(open('$CFG')); d.setdefault('mcpServers',{})['${server.id}']=${JSON.stringify({ command: 'npx', args: ['-y', pkg], ...(hasPaid && { env: { API_KEY: 'YOUR_API_KEY_HERE' } }) })}; json.dump(d,open('$CFG','w'),ensure_ascii=False,indent=2)"; ` +
+    `python3 -c "import json; d=json.load(open('$CFG')); d.setdefault('mcpServers',{})['${server.id}']=${JSON.stringify({ command: 'npx', args: ['-y', pkg], ...(shEnvObj && { env: shEnvObj }) })}; json.dump(d,open('$CFG','w'),ensure_ascii=False,indent=2)"; ` +
     `echo "✅ ${server.name} 설치 완료!"`;
 
-  const codeCmd = `claude mcp add ${server.id}${hasPaid ? ' -e API_KEY=YOUR_API_KEY_HERE' : ''} npx -- -y ${pkg}`;
+  const envFlags = envVars.map(v => `-e ${v.key}=YOUR_${v.key}`).join(' ');
+  const codeCmd  = `claude mcp add ${server.id}${envFlags ? ' ' + envFlags : ''} npx -y ${pkg}`;
 
   const copy = (text: string) => { navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
@@ -204,11 +211,16 @@ function InstallModal({ server, onClose }: { server: MCPServerMeta; onClose: () 
             </>
           )}
 
-          {/* API 키 안내 */}
-          {hasPaid && client !== 'web' && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
-              <p className="font-semibold mb-1">🔑 API 키 필요</p>
-              <p className="text-xs"><code className="bg-white px-1 rounded">YOUR_API_KEY_HERE</code>를 실제 키로 교체하세요. <a href={server.apiDocs} target="_blank" rel="noopener noreferrer" className="underline font-medium">공식 문서</a>에서 발급.</p>
+          {/* 환경 변수 안내 */}
+          {hasEnv && client !== 'web' && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+              <p className="text-sm font-semibold text-amber-800">🔑 환경 변수 설정 필요</p>
+              {envVars.map(v => (
+                <div key={v.key} className="flex items-start gap-2 text-xs text-amber-700">
+                  <code className="bg-white border border-amber-200 px-1.5 py-0.5 rounded shrink-0">{v.key}</code>
+                  <span>{v.description}{v.docsUrl && <> · <a href={v.docsUrl} target="_blank" rel="noopener noreferrer" className="underline font-medium">발급 방법</a></>}</span>
+                </div>
+              ))}
             </div>
           )}
 

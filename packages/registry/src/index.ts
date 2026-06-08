@@ -20,6 +20,13 @@ export interface MCPTool {
   description: string;
 }
 
+export interface MCPEnvVar {
+  key: string;           // 실제 환경 변수명 (예: SMARTSTORE_CLIENT_ID)
+  description: string;   // 사용자에게 보여줄 설명
+  required: boolean;
+  docsUrl?: string;      // 발급 방법 링크
+}
+
 export interface MCPServerMeta {
   id: string;
   name: string;
@@ -39,6 +46,7 @@ export interface MCPServerMeta {
   apiDocs: string;
   githubUrl?: string;
   npmPackage?: string;     // npx 설치 패키지명
+  envVars?: MCPEnvVar[];   // 서버별 필수/선택 환경 변수
   featured: boolean;
   updatedAt: string;       // YYYY-MM-DD
   tools: MCPTool[];
@@ -125,6 +133,10 @@ export const REGISTRY: MCPServerMeta[] = [
     certs: ['ISMS-P'],
     apiDocs: 'https://apicenter.commerce.naver.com',
     npmPackage: '@mcp-kr/smartstore-mcp',
+    envVars: [
+      { key: 'SMARTSTORE_CLIENT_ID',     description: '스마트스토어 개발자 앱 Client ID',     required: true,  docsUrl: 'https://apicenter.commerce.naver.com' },
+      { key: 'SMARTSTORE_CLIENT_SECRET', description: '스마트스토어 개발자 앱 Client Secret', required: true,  docsUrl: 'https://apicenter.commerce.naver.com' },
+    ],
     featured: true,
     updatedAt: '2026-06-01',
     isSeed: true,
@@ -157,6 +169,9 @@ export const REGISTRY: MCPServerMeta[] = [
     certs: ['CC인증'],
     apiDocs: 'https://www.wetax.go.kr/openapi',
     npmPackage: '@mcp-kr/witax-mcp',
+    envVars: [
+      { key: 'WETAX_API_KEY', description: '위택스 Open API 인증키', required: true, docsUrl: 'https://www.wetax.go.kr/openapi' },
+    ],
     featured: false,
     updatedAt: '2026-05-20',
     isSeed: true,
@@ -185,6 +200,9 @@ export const REGISTRY: MCPServerMeta[] = [
     certs: ['ISMS-P', 'CC인증'],
     apiDocs: 'https://edi.nps.or.kr',
     npmPackage: '@mcp-kr/nps-edi-mcp',
+    envVars: [
+      { key: 'NPS_EDI_BIZ_NO', description: '국민연금 EDI 사업장 관리번호', required: true, docsUrl: 'https://edi.nps.or.kr' },
+    ],
     featured: false,
     updatedAt: '2026-05-15',
     isSeed: true,
@@ -213,6 +231,9 @@ export const REGISTRY: MCPServerMeta[] = [
     certs: ['ISMS-P', 'CC인증'],
     apiDocs: 'https://edi.nhis.or.kr',
     npmPackage: '@mcp-kr/nhis-edi-mcp',
+    envVars: [
+      { key: 'NHIS_EDI_BIZ_NO', description: '건강보험 EDI 사업장 관리번호', required: true, docsUrl: 'https://edi.nhis.or.kr' },
+    ],
     featured: false,
     updatedAt: '2026-05-15',
     isSeed: true,
