@@ -49,6 +49,14 @@ publish 명령어: `npm publish --access=public` (Granular Token with "Bypass 2F
 
 ## 알려진 함정 (Known Gotchas)
 
+### 컴포넌트 이중화 함정 — 변경 시 반드시 확인
+- 설치 모달: `apps/web/src/components/MiniInstallModal.tsx` (정본) — envVars 지원, amber-400 배경
+  - `apps/web/src/components/InstallModal.tsx` (구버전) — pricing 기반, envVars 미지원 → **사용 금지**
+  - `apps/web/src/app/page.tsx`의 인라인 `MiniInstallModal` 정의 → 동기화 불필요 (MCPCard가 컴포넌트 파일 사용)
+- 카드 컴포넌트: `apps/web/src/components/MCPCard.tsx` (정본) — AnyServer 타입, MiniInstallModal 사용
+  - `apps/web/src/app/page.tsx`의 인라인 `FeaturedCard` → **삭제 대상** (현재 MCPCard로 교체됨)
+- 코드 변경 시 루트 `/src/`가 아닌 반드시 `apps/web/src/`에 적용할 것
+
 ### registry dist는 gitignore — Vercel이 항상 재빌드
 - `packages/registry/dist/`는 `.gitignore` 대상이라 git에 커밋 불가
 - Vercel buildCommand에 `npm run build --workspace=packages/registry`가 포함되어 있어 배포 시 자동 재빌드됨
@@ -88,10 +96,19 @@ npm run build --workspace=packages/registry
 ```
 mcp-marketplace-kr/
 ├── apps/web/src/
-│   ├── app/page.tsx          # 메인 마켓플레이스 (설치 모달 포함)
-│   ├── app/register/page.tsx # 서버 등록 폼
+│   ├── app/
+│   │   ├── page.tsx                        # 메인 랜딩 (MCPCard 사용)
+│   │   ├── browse/page.tsx                 # 카탈로그 (MCPCard + 좋아요/날짜 정렬)
+│   │   ├── api/likes/[serverId]/route.ts   # Next.js → Hono 좋아요 프록시
+│   │   └── register/page.tsx              # 서버 등록 폼
 │   └── components/
+│       ├── MCPCard.tsx           # ★ 정본 카드 (AnyServer 타입, useLikes, MiniInstallModal)
+│       ├── MiniInstallModal.tsx  # ★ 정본 설치 모달 (envVars, amber-400)
+│       ├── InstallModal.tsx      # 구버전 — 직접 사용 금지
 │       └── CategoryFilter.tsx
+├── apps/api/src/
+│   ├── index.ts   # Hono API (GET/POST /servers/:id/likes)
+│   └── db.ts      # SQLite (better-sqlite3) 좋아요 영구 저장
 ├── packages/registry/src/
 │   └── index.ts              # MCPServerMeta, MCPEnvVar, CATEGORIES, CERT_COLORS
 ├── servers/
@@ -121,3 +138,7 @@ mcp-marketplace-kr/
 | 2026-06-08 | Vercel 재배포 (envVars 반영) |
 | 2026-06-08 | 버그 수정: registry dist 미빌드로 envVars 누락 → Vercel 재배포로 해결 |
 | 2026-06-08 | UI 개선: 설치 모달 '환경 변수 설정 필요' 섹션 배경색 강조 (amber-50 → amber-400) |
+| 2026-06-08 | 기능: likes/publishedAt 세션 연동 — SQLite DB, useLikes 훅, ♥ 버튼, 정렬 옵션 추가 |
+| 2026-06-08 | 버그 수정: 변경이 루트 `/src/`에 적용됨 → `apps/web/src/`로 이동 |
+| 2026-06-08 | 버그 수정: 메인 페이지 FeaturedCard → MCPCard 교체 (likes/publishedAt 반영) |
+| 2026-06-08 | 버그 수정: MCPCard가 구버전 InstallModal 사용 → MiniInstallModal로 교체 (amber envVars 복원) |
