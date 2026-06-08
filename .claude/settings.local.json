@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(run)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(curl -s http://localhost:3001)",
+      "Bash(node *)",
+      "Bash(npx playwright *)",
+      "Bash(npm list *)",
+      "Bash(where playwright *)",
+      "Bash(npx --yes playwright@1.60.0 install chromium)",
+      "Bash(curl -s http://localhost:3001/browse)",
+      "Bash(grep -o '설치하기.\\\\{0,200\\\\}')",
+      "Bash(grep -o 'svg.\\\\{0,50\\\\}설치하기')"
+    ]
+  }
+}
