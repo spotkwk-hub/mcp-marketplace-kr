@@ -13,6 +13,7 @@ const MVP_FEATURES = [
 ];
 import { ArrowRight, CheckCircle, Circle, Search, Package, CreditCard, BarChart2, UserPlus, Star, Sprout, Download, Shield, ChevronDown, ChevronUp, Copy, Check, X, ExternalLink, Zap, BookOpen, Terminal, Monitor, Code2, Globe } from 'lucide-react';
 import Header from '@/components/Header';
+import MCPCard from '@/components/MCPCard';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -342,7 +343,7 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {featuredServers.map(s => (
-              <FeaturedCard key={s.id} server={s} />
+              <MCPCard key={s.id} server={s} />
             ))}
           </div>
         </div>

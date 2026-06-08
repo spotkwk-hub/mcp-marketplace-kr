@@ -1,7 +1,11 @@
 'use client';
 
 import { MCPServer } from '@/types';
+import { type MCPServerMeta } from '@mcp-kr/registry';
 import { CERT_COLORS, PRICING_LABELS } from '@/lib/data';
+
+// MCPServer(로컬)와 MCPServerMeta(registry) 둘 다 수용
+type AnyServer = MCPServer | MCPServerMeta;
 import { formatKRW, formatNumber } from '@/lib/utils';
 import { Star, Download, Heart, Shield, CheckCircle, ChevronDown, ChevronUp, Sprout, CreditCard, CalendarDays } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
@@ -17,7 +21,7 @@ const PRICING_BG: Record<string, string> = {
 
 const LIKED_KEY = (id: string) => `liked:${id}`;
 
-function useLikes(server: MCPServer) {
+function useLikes(server: AnyServer) {
   const [count, setCount]   = useState(server.likes);
   const [liked, setLiked]   = useState(false);
   const [loading, setLoading] = useState(false);
@@ -73,7 +77,7 @@ function useLikes(server: MCPServer) {
   return { count, liked, toggle };
 }
 
-export default function MCPCard({ server }: { server: MCPServer }) {
+export default function MCPCard({ server }: { server: AnyServer }) {
   const [expanded, setExpanded]       = useState(false);
   const [showInstall, setShowInstall] = useState(false);
   const { count: likeCount, liked, toggle: toggleLike } = useLikes(server);
