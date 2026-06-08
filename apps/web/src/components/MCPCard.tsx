@@ -10,7 +10,7 @@ import { formatKRW, formatNumber } from '@/lib/utils';
 import { Star, Download, Heart, Shield, CheckCircle, ChevronDown, ChevronUp, Sprout, CreditCard, CalendarDays } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import InstallModal from './InstallModal';
+import MiniInstallModal from './MiniInstallModal';
 
 const PRICING_BG: Record<string, string> = {
   free:       'bg-emerald-100 text-emerald-800',
@@ -197,7 +197,7 @@ export default function MCPCard({ server }: { server: AnyServer }) {
       )}
 
       {/* CTA */}
-      {showInstall && <InstallModal server={server} onClose={() => setShowInstall(false)} />}
+      {showInstall && <MiniInstallModal server={server} onClose={() => setShowInstall(false)} />}
       <div className="flex gap-2 mt-1">
         {isPaid ? (
           <button
