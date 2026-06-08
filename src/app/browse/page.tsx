@@ -8,7 +8,7 @@ import Header from '@/components/Header';
 import { Search, SlidersHorizontal, Sprout } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type SortKey = 'installs' | 'stars' | 'updatedAt';
+type SortKey = 'installs' | 'stars' | 'likes' | 'updatedAt' | 'publishedAt';
 
 export default function BrowsePage() {
   const [search, setSearch]     = useState('');
@@ -30,8 +30,10 @@ export default function BrowsePage() {
       }
       return true;
     }).sort((a, b) => {
-      if (sort === 'installs')  return b.installs - a.installs;
-      if (sort === 'stars')     return b.stars - a.stars;
+      if (sort === 'installs')    return b.installs - a.installs;
+      if (sort === 'stars')       return b.stars - a.stars;
+      if (sort === 'likes')       return b.likes - a.likes;
+      if (sort === 'publishedAt') return b.publishedAt.localeCompare(a.publishedAt);
       return b.updatedAt.localeCompare(a.updatedAt);
     });
   }, [search, category, sort, pricing, seedOnly]);
@@ -75,7 +77,9 @@ export default function BrowsePage() {
               >
                 <option value="installs">설치 많은 순</option>
                 <option value="stars">별점 높은 순</option>
-                <option value="updatedAt">최신 순</option>
+                <option value="likes">좋아요 많은 순</option>
+                <option value="updatedAt">최근 업데이트 순</option>
+                <option value="publishedAt">최근 등록 순</option>
               </select>
             </div>
           </div>

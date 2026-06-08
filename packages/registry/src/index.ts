@@ -48,7 +48,9 @@ export interface MCPServerMeta {
   npmPackage?: string;     // npx 설치 패키지명
   envVars?: MCPEnvVar[];   // 서버별 필수/선택 환경 변수
   featured: boolean;
+  publishedAt: string;     // YYYY-MM-DD (최초 게시일)
   updatedAt: string;       // YYYY-MM-DD
+  likes: number;           // 누적 좋아요 수 (seed 초기값)
   tools: MCPTool[];
   isSeed?: boolean;        // 플랫폼 직접 제작 시드 서버
 }
@@ -78,7 +80,9 @@ export const REGISTRY: MCPServerMeta[] = [
       { key: 'PUBLIC_DATA_API_KEY', description: '공공데이터포털 서비스 인증키', required: true, docsUrl: 'https://www.data.go.kr' },
     ],
     featured: true,
+    publishedAt: '2025-11-10',
     updatedAt: '2026-06-07',
+    likes: 1842,
     isSeed: true,
     tools: [
       { name: 'get_weather',            description: '기상청 단기예보' },
@@ -109,7 +113,9 @@ export const REGISTRY: MCPServerMeta[] = [
       { key: 'G2B_API_KEY', description: '나라장터 Open API 인증키', required: true, docsUrl: 'https://www.g2b.go.kr' },
     ],
     featured: true,
+    publishedAt: '2025-12-01',
     updatedAt: '2026-06-07',
+    likes: 934,
     isSeed: true,
     tools: [
       { name: 'search_bid_announcements', description: '입찰공고 검색' },
@@ -144,7 +150,9 @@ export const REGISTRY: MCPServerMeta[] = [
       { key: 'SMARTSTORE_CLIENT_SECRET', description: '스마트스토어 개발자 앱 Client Secret', required: true,  docsUrl: 'https://apicenter.commerce.naver.com' },
     ],
     featured: true,
+    publishedAt: '2026-01-15',
     updatedAt: '2026-06-01',
+    likes: 621,
     isSeed: true,
     tools: [
       { name: 'list_products',       description: '상품 목록 조회' },
@@ -179,7 +187,9 @@ export const REGISTRY: MCPServerMeta[] = [
       { key: 'WETAX_API_KEY', description: '위택스 Open API 인증키', required: true, docsUrl: 'https://www.wetax.go.kr/openapi' },
     ],
     featured: false,
+    publishedAt: '2026-02-10',
     updatedAt: '2026-05-20',
+    likes: 389,
     isSeed: true,
     tools: [
       { name: 'get_local_tax_notices',  description: '지방세 고지서 목록 조회' },
@@ -210,7 +220,9 @@ export const REGISTRY: MCPServerMeta[] = [
       { key: 'NPS_EDI_BIZ_NO', description: '국민연금 EDI 사업장 관리번호', required: true, docsUrl: 'https://edi.nps.or.kr' },
     ],
     featured: false,
+    publishedAt: '2026-02-20',
     updatedAt: '2026-05-15',
+    likes: 234,
     isSeed: true,
     tools: [
       { name: 'report_acquisition',      description: '직원 취득(입사) 신고' },
@@ -241,7 +253,9 @@ export const REGISTRY: MCPServerMeta[] = [
       { key: 'NHIS_EDI_BIZ_NO', description: '건강보험 EDI 사업장 관리번호', required: true, docsUrl: 'https://edi.nhis.or.kr' },
     ],
     featured: false,
+    publishedAt: '2026-02-20',
     updatedAt: '2026-05-15',
+    likes: 198,
     isSeed: true,
     tools: [
       { name: 'report_enrollment',        description: '직장 가입자 취득 신고' },
@@ -277,7 +291,9 @@ export const REGISTRY: MCPServerMeta[] = [
       { key: 'DOUZONE_COMPANY_CD', description: '더존 iCUBE 회사 코드', required: true,  docsUrl: 'https://ipartner.douzone.com' },
     ],
     featured: true,
+    publishedAt: '2025-09-15',
     updatedAt: '2026-06-01',
+    likes: 218,
     isSeed: true,
     tools: [
       { name: 'get_vouchers',          description: '전표 조회 (매출/매입/일반)' },
@@ -309,7 +325,9 @@ export const REGISTRY: MCPServerMeta[] = [
       { key: 'HOMETAX_API_KEY', description: '홈택스 Open API 인증키', required: true, docsUrl: 'https://www.hometax.go.kr' },
     ],
     featured: true,
+    publishedAt: '2025-08-20',
     updatedAt: '2026-04-10',
+    likes: 1105,
     isSeed: true,
     tools: [
       { name: 'verify_business_registration', description: '사업자등록번호 진위 확인' },

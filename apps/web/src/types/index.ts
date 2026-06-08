@@ -34,7 +34,9 @@ export interface MCPServer {
   apiDocs: string;
   githubUrl?: string;
   featured: boolean;
+  publishedAt: string;
   updatedAt: string;
+  likes: number;
   tools: MCPTool[];
   /** 현재 세션에 실제 연결·검증된 MCP 서버 */
   isLive?: boolean;

@@ -5,16 +5,18 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "dev":   "tsx watch src/index.ts",
+    "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
     "@mcp-kr/registry": "*",
+    "better-sqlite3": "^12.10.0",
     "hono": "^4.7.11"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20",
     "tsx": "^4.19.4",
     "typescript": "^5"

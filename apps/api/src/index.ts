@@ -18,12 +18,14 @@ import {
   type Category,
   type MCPServerMeta,
 } from '@mcp-kr/registry';
+import { getLikes, addLike } from './db.js';
 
 const app = new Hono();
 
 // ── 미들웨어 ──────────────────────────────────────────────
 app.use('*', logger());
-app.use('*', cors({ origin: ['http://localhost:3000', 'https://mcp-kr.dev'] }));
+app.use('*', cors({ origin: ['http://localhost:3000', 'http://localhost:3001', 'https://mcp-kr.dev'] }));
+
 
 // ── 헬스체크 ──────────────────────────────────────────────
 app.get('/health', c => c.json({ ok: true, ts: new Date().toISOString() }));
@@ -141,6 +143,25 @@ app.post('/register', async c => {
     message: '등록 신청이 완료되었습니다. 영업일 3일 내 이메일로 연락드립니다.',
     submittedAt: new Date().toISOString(),
   }, 201);
+});
+
+// ── 좋아요 조회  GET /servers/:id/likes ───────────────────
+app.get('/servers/:id/likes', c => {
+  const id    = c.req.param('id');
+  const count = getLikes(id);
+  if (count === null) return c.json({ error: 'Server not found' }, 404);
+  return c.json({ serverId: id, likes: count });
+});
+
+// ── 좋아요 토글  POST /servers/:id/like ───────────────────
+// Body: { delta: 1 | -1 }
+app.post('/servers/:id/like', async c => {
+  const id    = c.req.param('id');
+  const body  = await c.req.json<{ delta?: number }>();
+  const delta = body.delta === -1 ? -1 : 1;
+  const next  = addLike(id, delta);
+  if (next === null) return c.json({ error: 'Server not found' }, 404);
+  return c.json({ serverId: id, likes: next });
 });
 
 // ── 서버 시작 ─────────────────────────────────────────────

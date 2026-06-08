@@ -3,8 +3,8 @@
 import { MCPServer } from '@/types';
 import { CERT_COLORS, PRICING_LABELS } from '@/lib/data';
 import { formatKRW, formatNumber } from '@/lib/utils';
-import { Star, Download, Shield, CheckCircle, ChevronDown, ChevronUp, Sprout, CreditCard } from 'lucide-react';
-import { useState } from 'react';
+import { Star, Download, Heart, Shield, CheckCircle, ChevronDown, ChevronUp, Sprout, CreditCard, CalendarDays } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import InstallModal from './InstallModal';
 
@@ -15,9 +15,68 @@ const PRICING_BG: Record<string, string> = {
   enterprise: 'bg-amber-100 text-amber-800',
 };
 
+const LIKED_KEY = (id: string) => `liked:${id}`;
+
+function useLikes(server: MCPServer) {
+  const [count, setCount]   = useState(server.likes);
+  const [liked, setLiked]   = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // localStorage에서 초기 좋아요 상태 복원
+  useEffect(() => {
+    setLiked(localStorage.getItem(LIKED_KEY(server.id)) === '1');
+  }, [server.id]);
+
+  // 마운트 시 API에서 최신 카운트 가져오기
+  useEffect(() => {
+    fetch(`/api/likes/${server.id}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.likes != null) setCount(data.likes); })
+      .catch(() => {/* API 미실행 시 정적 값 유지 */});
+  }, [server.id]);
+
+  const toggle = useCallback(async () => {
+    if (loading) return;
+    const next = !liked;
+    const delta = next ? 1 : -1;
+
+    // 낙관적 업데이트
+    setLiked(next);
+    setCount(c => Math.max(0, c + delta));
+    localStorage.setItem(LIKED_KEY(server.id), next ? '1' : '0');
+    setLoading(true);
+
+    try {
+      const res = await fetch(`/api/likes/${server.id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ delta }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.likes != null) setCount(data.likes);
+      } else {
+        // 실패 시 롤백
+        setLiked(!next);
+        setCount(c => Math.max(0, c - delta));
+        localStorage.setItem(LIKED_KEY(server.id), next ? '0' : '1');
+      }
+    } catch {
+      setLiked(!next);
+      setCount(c => Math.max(0, c - delta));
+      localStorage.setItem(LIKED_KEY(server.id), next ? '0' : '1');
+    } finally {
+      setLoading(false);
+    }
+  }, [liked, loading, server.id]);
+
+  return { count, liked, toggle };
+}
+
 export default function MCPCard({ server }: { server: MCPServer }) {
-  const [expanded, setExpanded]     = useState(false);
+  const [expanded, setExpanded]       = useState(false);
   const [showInstall, setShowInstall] = useState(false);
+  const { count: likeCount, liked, toggle: toggleLike } = useLikes(server);
   const router = useRouter();
 
   const isPaid = server.pricing === 'paid' || server.pricing === 'enterprise';
@@ -81,17 +140,35 @@ export default function MCPCard({ server }: { server: MCPServer }) {
       )}
 
       {/* Stats */}
-      <div className="flex items-center gap-4 text-sm text-gray-500 pt-1 border-t border-gray-100">
+      <div className="flex items-center gap-3 text-sm text-gray-500 pt-1 border-t border-gray-100 flex-wrap">
         <span className="flex items-center gap-1">
           <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
           {formatNumber(server.stars)}
         </span>
+        <button
+          onClick={toggleLike}
+          aria-label={liked ? '좋아요 취소' : '좋아요'}
+          className={`flex items-center gap-1 transition-colors rounded-md px-1 -mx-1 ${
+            liked
+              ? 'text-rose-500 hover:text-rose-400'
+              : 'text-gray-400 hover:text-rose-400'
+          }`}
+        >
+          <Heart
+            className={`w-3.5 h-3.5 transition-all ${liked ? 'fill-rose-500 scale-110' : ''}`}
+          />
+          {formatNumber(likeCount)}
+        </button>
         <span className="flex items-center gap-1">
           <Download className="w-3.5 h-3.5" />
           {formatNumber(server.installs)}
         </span>
-        <span className="ml-auto text-xs text-gray-400">업데이트 {server.updatedAt}</span>
+        <span className="ml-auto flex items-center gap-1 text-xs text-gray-400">
+          <CalendarDays className="w-3 h-3" />
+          {server.publishedAt} 등록
+        </span>
       </div>
+      <div className="text-xs text-gray-400 text-right -mt-2">최종 업데이트 {server.updatedAt}</div>
 
       {/* Tool list toggle */}
       <button
