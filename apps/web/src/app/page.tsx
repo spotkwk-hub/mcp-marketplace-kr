@@ -186,12 +186,12 @@ function MiniInstallModal({ server, onClose }: { server: MCPServerMeta; onClose:
           )}
 
           {hasEnv && client !== 'web' && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
-              <p className="text-sm font-semibold text-amber-800">🔑 환경 변수 설정 필요</p>
+            <div className="bg-amber-400 border-2 border-amber-500 rounded-xl p-4 space-y-2 shadow-sm">
+              <p className="text-sm font-bold text-amber-950">🔑 환경 변수 설정 필요</p>
               {envVars.map(v => (
-                <div key={v.key} className="flex items-start gap-2 text-xs text-amber-700">
-                  <code className="bg-white border border-amber-200 px-1.5 py-0.5 rounded shrink-0">{v.key}</code>
-                  <span>{v.description}{v.docsUrl && <> · <a href={v.docsUrl} target="_blank" rel="noopener noreferrer" className="underline font-medium">발급 방법</a></>}</span>
+                <div key={v.key} className="flex items-start gap-2 text-xs text-amber-900">
+                  <code className="bg-white/70 border border-amber-600 px-1.5 py-0.5 rounded shrink-0 font-semibold">{v.key}</code>
+                  <span>{v.description}{v.docsUrl && <> · <a href={v.docsUrl} target="_blank" rel="noopener noreferrer" className="underline font-bold">발급 방법</a></>}</span>
                 </div>
               ))}
             </div>
