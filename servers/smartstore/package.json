@@ -1,16 +1,26 @@
 {
-  "name": "@mcp-kr/smartstore",
+  "name": "@mcp-kr/smartstore-mcp",
   "version": "0.1.0",
-  "description": "네이버 스마트스토어 Connect API MCP 서버",
+  "description": "네이버 스마트스토어 Commerce API MCP 서버 — Claude Desktop에서 스마트스토어를 직접 제어합니다.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "mcp-smartstore": "dist/index.js"
   },
+  "files": ["dist"],
+  "engines": { "node": ">=18" },
+  "keywords": ["mcp", "smartstore", "naver", "claude", "llm", "korean"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spotkwk-hub/mcp-marketplace-kr.git",
+    "directory": "servers/smartstore"
+  },
   "scripts": {
-    "dev":   "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
+    "dev":            "tsx watch src/index.ts",
+    "build":          "tsc",
+    "start":          "node dist/index.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1"

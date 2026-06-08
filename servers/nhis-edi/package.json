@@ -1,16 +1,26 @@
 {
-  "name": "@mcp-kr/nhis-edi",
+  "name": "@mcp-kr/nhis-edi-mcp",
   "version": "0.1.0",
-  "description": "국민건강보험공단 EDI API MCP 서버",
+  "description": "국민건강보험공단 EDI API MCP 서버 — Claude Desktop에서 직장 가입자 관리, 보험료 고지서 조회를 자동화합니다.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "mcp-nhis-edi": "dist/index.js"
   },
+  "files": ["dist"],
+  "engines": { "node": ">=18" },
+  "keywords": ["mcp", "nhis", "건강보험", "edi", "claude", "korean"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spotkwk-hub/mcp-marketplace-kr.git",
+    "directory": "servers/nhis-edi"
+  },
   "scripts": {
-    "dev":   "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
+    "dev":            "tsx watch src/index.ts",
+    "build":          "tsc",
+    "start":          "node dist/index.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1"

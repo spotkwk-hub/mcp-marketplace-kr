@@ -1,16 +1,26 @@
 {
-  "name": "@mcp-kr/witax",
+  "name": "@mcp-kr/witax-mcp",
   "version": "0.1.0",
-  "description": "위택스 지방세 API MCP 서버",
+  "description": "위택스(행안부) 지방세 Open API MCP 서버 — Claude Desktop에서 지방세 고지서·납세증명을 조회합니다.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
     "mcp-witax": "dist/index.js"
   },
+  "files": ["dist"],
+  "engines": { "node": ">=18" },
+  "keywords": ["mcp", "witax", "wetax", "지방세", "claude", "korean"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spotkwk-hub/mcp-marketplace-kr.git",
+    "directory": "servers/witax"
+  },
   "scripts": {
-    "dev":   "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js"
+    "dev":            "tsx watch src/index.ts",
+    "build":          "tsc",
+    "start":          "node dist/index.js",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1"
