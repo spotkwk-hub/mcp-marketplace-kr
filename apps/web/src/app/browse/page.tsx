@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { MCP_SERVERS, CATEGORIES } from '@/lib/data';
-import { Category } from '@/types';
+import { REGISTRY, CATEGORIES, type Category } from '@mcp-kr/registry';
 import MCPCard from '@/components/MCPCard';
 import Header from '@/components/Header';
 import { Search, SlidersHorizontal, Sprout } from 'lucide-react';
@@ -18,22 +17,22 @@ export default function BrowsePage() {
   const [seedOnly, setSeedOnly] = useState(false);
 
   const filtered = useMemo(() => {
-    return MCP_SERVERS.filter(s => {
+    return [...REGISTRY].filter(s => {
       if (seedOnly && !s.isSeed) return false;
       if (category !== 'all' && s.category !== category) return false;
       if (pricing !== 'all' && s.pricing !== pricing) return false;
       const q = search.toLowerCase();
       if (q) {
-        const hit = s.name.includes(q) || s.description.includes(q) ||
-          s.tags.some(t => t.includes(q)) || s.author.toLowerCase().includes(q);
+        const hit = s.name.toLowerCase().includes(q) || s.description.toLowerCase().includes(q) ||
+          s.tags.some(t => t.toLowerCase().includes(q)) || s.author.toLowerCase().includes(q);
         if (!hit) return false;
       }
       return true;
     }).sort((a, b) => {
       if (sort === 'installs')    return b.installs - a.installs;
       if (sort === 'stars')       return b.stars - a.stars;
-      if (sort === 'likes')       return b.likes - a.likes;
-      if (sort === 'publishedAt') return b.publishedAt.localeCompare(a.publishedAt);
+      if (sort === 'likes')       return (b.likes ?? 0) - (a.likes ?? 0);
+      if (sort === 'publishedAt') return (b.publishedAt ?? '').localeCompare(a.publishedAt ?? '');
       return b.updatedAt.localeCompare(a.updatedAt);
     });
   }, [search, category, sort, pricing, seedOnly]);
@@ -114,11 +113,11 @@ export default function BrowsePage() {
           </button>
         </div>
 
-        {/* 결과 카운트 + 배지 */}
+        {/* 결과 카운트 */}
         <div className="flex items-center gap-3 mb-4">
           <span className="text-sm font-semibold text-gray-700">{filtered.length}개 서버</span>
           <span className="flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-            <Sprout className="w-3 h-3" /> {MCP_SERVERS.filter(s => s.isSeed).length}개 플랫폼 시드
+            <Sprout className="w-3 h-3" /> {REGISTRY.filter(s => s.isSeed).length}개 플랫폼 시드
           </span>
         </div>
 
