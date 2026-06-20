@@ -1,7 +1,10 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+} from "@modelcontextprotocol/sdk/types.js";
 import Anthropic from "@anthropic-ai/sdk";
-import { z } from "zod";
 
 import { createUCBState, selectArm, updateArm, getArmStats } from "./ucb-router.js";
 import { evaluateQuality, formatScore } from "./quality-eval.js";
@@ -11,111 +14,138 @@ import { compressPrompt } from "./optimizer.js";
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const ucbState = createUCBState(1.4);
 
-const server = new McpServer({
-  name: "outcome-maxxing-mcp",
-  version: "2.0.0",
-});
-
-// Zod 스키마를 변수로 분리 — TS2589(타입 추론 깊이 초과) 방지
-const OutcomeQuerySchema = {
-  goal: z.string().describe("달성하려는 목표 (품질 평가 기준)"),
-  prompt: z.string().describe("LLM에게 보낼 프롬프트"),
-  system: z.string().optional().describe("시스템 프롬프트 (선택)"),
-  max_iterations: z.number().int().min(1).max(5).optional().describe("최대 반복 횟수 (기본 3)"),
-  quality_threshold: z.number().min(0).max(1).optional().describe("수렴 품질 임계값 0-1 (기본 0.75)"),
-  max_tokens: z.number().int().optional().describe("응답 최대 토큰 (기본 1024)"),
-};
-
-const UCBQuerySchema = {
-  prompt: z.string().describe("쿼리 프롬프트"),
-  system: z.string().optional().describe("시스템 프롬프트"),
-  compress: z.boolean().optional().describe("프롬프트 자동 압축 (기본 true)"),
-  max_tokens: z.number().int().optional().describe("최대 토큰 (기본 1024)"),
-};
-
-const EvalSchema = {
-  goal: z.string().describe("달성 목표"),
-  response: z.string().describe("평가할 응답 텍스트"),
-  output_tokens: z.number().int().optional().describe("응답 생성에 사용된 토큰 수 (기본 256)"),
-};
-
-const CompressSchema = {
-  prompt: z.string().describe("압축할 프롬프트"),
-};
-
-// ── Tool 1: outcome_query ────────────────────────────────────────────────────
-server.tool(
-  "outcome_query",
-  "UCB 자율 라우터 + GCR 루프 + 자율 품질 평가로 목표 달성까지 반복 실행",
-  OutcomeQuerySchema,
-  async ({ goal, prompt, system, max_iterations, quality_threshold, max_tokens }) => {
-    const result = await runGCRLoop(client, ucbState, goal, prompt, {
-      maxIterations: max_iterations ?? 3,
-      qualityThreshold: quality_threshold ?? 0.75,
-      systemPrompt: system,
-      maxTokens: max_tokens ?? 1024,
-    });
-    return { content: [{ type: "text", text: formatGCRReport(result) }] };
-  }
+const server = new Server(
+  { name: "outcome-maxxing-mcp", version: "2.0.0" },
+  { capabilities: { tools: {} } }
 );
 
-// ── Tool 2: ucb_query ────────────────────────────────────────────────────────
-server.tool(
-  "ucb_query",
-  "UCB로 최적 모델 자동 선택 후 단발 쿼리 (GCR 루프 없음)",
-  UCBQuerySchema,
-  async ({ prompt, system, compress, max_tokens }) => {
-    const effectivePrompt = (compress !== false) ? compressPrompt(prompt).compressed : prompt;
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
+  tools: [
+    {
+      name: "outcome_query",
+      description: "UCB 자율 라우터 + GCR 루프 + 자율 품질 평가로 목표 달성까지 반복 실행",
+      inputSchema: {
+        type: "object",
+        properties: {
+          goal:              { type: "string",  description: "달성하려는 목표 (품질 평가 기준)" },
+          prompt:            { type: "string",  description: "LLM에게 보낼 프롬프트" },
+          system:            { type: "string",  description: "시스템 프롬프트 (선택)" },
+          max_iterations:    { type: "number",  description: "최대 반복 횟수 (기본 3, 최대 5)" },
+          quality_threshold: { type: "number",  description: "수렴 품질 임계값 0-1 (기본 0.75)" },
+          max_tokens:        { type: "number",  description: "응답 최대 토큰 (기본 1024)" },
+        },
+        required: ["goal", "prompt"],
+      },
+    },
+    {
+      name: "ucb_query",
+      description: "UCB로 최적 모델 자동 선택 후 단발 쿼리 (GCR 루프 없음, 빠른 경로)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          prompt:     { type: "string",  description: "쿼리 프롬프트" },
+          system:     { type: "string",  description: "시스템 프롬프트 (선택)" },
+          compress:   { type: "boolean", description: "프롬프트 자동 압축 (기본 true)" },
+          max_tokens: { type: "number",  description: "최대 토큰 (기본 1024)" },
+        },
+        required: ["prompt"],
+      },
+    },
+    {
+      name: "evaluate_quality",
+      description: "응답 품질을 목표 대비 자율 평가 (판정 모델: Haiku)",
+      inputSchema: {
+        type: "object",
+        properties: {
+          goal:          { type: "string", description: "달성 목표" },
+          response:      { type: "string", description: "평가할 응답 텍스트" },
+          output_tokens: { type: "number", description: "응답 생성에 사용된 토큰 수 (기본 256)" },
+        },
+        required: ["goal", "response"],
+      },
+    },
+    {
+      name: "ucb_stats",
+      description: "UCB 팔별 평균 보상·선택 횟수 통계 조회",
+      inputSchema: { type: "object", properties: {} },
+    },
+    {
+      name: "compress_prompt",
+      description: "프롬프트 압축 — 불필요한 표현 제거로 토큰 절감",
+      inputSchema: {
+        type: "object",
+        properties: {
+          prompt: { type: "string", description: "압축할 프롬프트" },
+        },
+        required: ["prompt"],
+      },
+    },
+    {
+      name: "reset_ucb",
+      description: "UCB 학습 상태 초기화 (새 세션 시작)",
+      inputSchema: { type: "object", properties: {} },
+    },
+  ],
+}));
+
+server.setRequestHandler(CallToolRequestSchema, async (req) => {
+  const { name, arguments: args = {} } = req.params;
+
+  if (name === "outcome_query") {
+    const result = await runGCRLoop(
+      client, ucbState,
+      String(args.goal),
+      String(args.prompt),
+      {
+        maxIterations:    typeof args.max_iterations    === "number" ? args.max_iterations    : 3,
+        qualityThreshold: typeof args.quality_threshold === "number" ? args.quality_threshold : 0.75,
+        systemPrompt:     typeof args.system            === "string"  ? args.system            : undefined,
+        maxTokens:        typeof args.max_tokens        === "number"  ? args.max_tokens        : 1024,
+      }
+    );
+    return { content: [{ type: "text", text: formatGCRReport(result) }] };
+  }
+
+  if (name === "ucb_query") {
+    const compress = args.compress !== false;
+    const prompt = String(args.prompt);
+    const effectivePrompt = compress ? compressPrompt(prompt).compressed : prompt;
     const arm = selectArm(ucbState);
 
     const resp = await client.messages.create({
       model: arm.id,
-      max_tokens: max_tokens ?? 1024,
-      ...(system ? { system } : {}),
+      max_tokens: typeof args.max_tokens === "number" ? args.max_tokens : 1024,
+      ...(typeof args.system === "string" ? { system: args.system } : {}),
       messages: [{ role: "user", content: effectivePrompt }],
     });
-
     const text = resp.content[0]?.type === "text" ? resp.content[0].text : "";
     const { input_tokens: inp, output_tokens: out } = resp.usage;
     const cost = (inp * arm.costPer1MInput + out * arm.costPer1MOutput) / 1_000_000;
-
     updateArm(ucbState, arm.id, 0.7);
-
     return {
       content: [{
         type: "text",
-        text: `${text}\n\n---\n모델: ${arm.label} (UCB 선택) | 토큰: ${inp}+${out} | 비용: $${cost.toFixed(6)}`,
+        text: `${text}\n\n---\n모델: ${arm.label} (UCB) | 토큰: ${inp}+${out} | 비용: $${cost.toFixed(6)}`,
       }],
     };
   }
-);
 
-// ── Tool 3: evaluate_quality ─────────────────────────────────────────────────
-server.tool(
-  "evaluate_quality",
-  "응답 품질을 목표 대비 자율 평가 (판정 모델: Haiku)",
-  EvalSchema,
-  async ({ goal, response, output_tokens }) => {
-    const score = await evaluateQuality(client, goal, response, output_tokens ?? 256);
+  if (name === "evaluate_quality") {
+    const score = await evaluateQuality(
+      client,
+      String(args.goal),
+      String(args.response),
+      typeof args.output_tokens === "number" ? args.output_tokens : 256
+    );
     return { content: [{ type: "text", text: formatScore(score) }] };
   }
-);
 
-// ── Tool 4: ucb_stats ────────────────────────────────────────────────────────
-server.tool(
-  "ucb_stats",
-  "UCB 모델 선택 통계 및 평균 보상 조회",
-  {},
-  async () => ({ content: [{ type: "text", text: getArmStats(ucbState) }] })
-);
+  if (name === "ucb_stats") {
+    return { content: [{ type: "text", text: getArmStats(ucbState) }] };
+  }
 
-// ── Tool 5: compress_prompt ──────────────────────────────────────────────────
-server.tool(
-  "compress_prompt",
-  "프롬프트 압축 — 불필요한 표현 제거로 토큰 절감",
-  CompressSchema,
-  async ({ prompt }) => {
-    const r = compressPrompt(prompt);
+  if (name === "compress_prompt") {
+    const r = compressPrompt(String(args.prompt));
     return {
       content: [{
         type: "text",
@@ -123,18 +153,14 @@ server.tool(
       }],
     };
   }
-);
 
-// ── Tool 6: reset_ucb ───────────────────────────────────────────────────────
-server.tool(
-  "reset_ucb",
-  "UCB 학습 상태 초기화 (새 세션 시작)",
-  {},
-  async () => {
+  if (name === "reset_ucb") {
     Object.assign(ucbState, createUCBState(1.4));
     return { content: [{ type: "text", text: "UCB 상태 초기화 완료." }] };
   }
-);
+
+  throw new Error(`Unknown tool: ${name}`);
+});
 
 const transport = new StdioServerTransport();
 await server.connect(transport);
