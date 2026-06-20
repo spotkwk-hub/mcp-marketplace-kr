@@ -1,0 +1,33 @@
+{
+  "name": "@mcp-kr/outcome-maxxing-mcp",
+  "version": "2.0.0",
+  "description": "UCB 자율 라우터 + GCR 루프로 최저 토큰·최고 품질을 자동 달성하는 MCP 서버",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": { "outcome-maxxing-mcp": "dist/index.js" },
+  "files": ["dist"],
+  "engines": { "node": ">=18" },
+  "keywords": ["mcp", "ucb", "token-optimization", "claude", "korean", "ai-router"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spotkwk-hub/mcp-marketplace-kr.git",
+    "directory": "servers/outcome-maxxing"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.54.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

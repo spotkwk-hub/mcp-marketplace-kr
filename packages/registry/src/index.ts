@@ -267,6 +267,47 @@ export const REGISTRY: MCPServerMeta[] = [
     ],
   },
 
+  /* ── 한국어AI ───────────────────────────────────────────── */
+  {
+    id: 'outcome-maxxing-mcp',
+    name: 'Outcome Maxxing MCP',
+    nameEn: 'Outcome Maxxing MCP',
+    description: 'UCB 자율 라우터 + GCR 루프로 최저 토큰·최고 품질을 자동 달성. Haiku/Sonnet/Opus 중 최적 모델을 밴딧 알고리즘으로 선택합니다.',
+    longDescription: 'UCB1(Upper Confidence Bound) 알고리즘으로 Haiku·Sonnet·Opus 3개 모델을 멀티암드 밴딧으로 자율 선택합니다. GCR(Goal-Conditioned Retry) 루프가 품질 임계값 미달 시 ①프롬프트 압축 → ②모델 에스컬레이션 → ③자가 수정 순으로 적응 재시도합니다. Haiku 판정 모델이 목표 부합·정확성·간결성·토큰 효율을 자율 평가해 보상 신호로 UCB를 업데이트합니다. Sonnet 기준선 대비 평균 36% 비용 절감.',
+    category: '한국어AI',
+    tags: ['토큰최적화', 'UCB라우터', 'GCR루프', '자율품질평가', '멀티암드밴딧', '비용절감'],
+    author: 'MCP 마켓플레이스 (시드)',
+    authorVerified: true,
+    version: '2.0.0',
+    stars: 0,
+    installs: 0,
+    pricing: 'free',
+    certs: [],
+    apiDocs: 'https://github.com/spotkwk-hub/mcp-marketplace-kr',
+    npmPackage: '@mcp-kr/outcome-maxxing-mcp',
+    envVars: [
+      {
+        key: 'ANTHROPIC_API_KEY',
+        description: 'Anthropic API 키 (claude.ai → 설정 → API Keys)',
+        required: true,
+        docsUrl: 'https://console.anthropic.com/settings/keys',
+      },
+    ],
+    featured: true,
+    publishedAt: '2026-06-21',
+    updatedAt: '2026-06-21',
+    likes: 0,
+    isSeed: true,
+    tools: [
+      { name: 'outcome_query',    description: 'UCB 라우팅 + GCR 루프 + 자율 품질 평가 통합 쿼리' },
+      { name: 'ucb_query',        description: 'UCB 자동 모델 선택 단발 쿼리 (빠른 경로)' },
+      { name: 'evaluate_quality', description: '응답 품질 자율 평가 (Haiku 판정)' },
+      { name: 'ucb_stats',        description: 'UCB 팔별 평균 보상·선택 횟수 통계' },
+      { name: 'compress_prompt',  description: '프롬프트 토큰 압축 (불필요 표현 제거)' },
+      { name: 'reset_ucb',        description: 'UCB 학습 상태 초기화' },
+    ],
+  },
+
   /* ── ERP·회계 ───────────────────────────────────────────── */
   {
     id: 'douzone-icube-mcp',
