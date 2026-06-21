@@ -1,11 +1,67 @@
 /**
  * ASCII visualization helpers for token/cost comparisons.
  * MCP tools return text, so we render bar charts as Unicode art.
+ * Renders as a markdown code block — displays correctly in
+ * VS Code (Continue / Copilot Chat) and Claude Code.
  */
 
 const BAR_FULL = "█";
 const BAR_EMPTY = "░";
 const BAR_WIDTH = 24;
+
+// ── Inline efficiency bar ─────────────────────────────────────────────────
+// Appended to every outcome_query / ucb_query response automatically.
+export function inlineEfficiencyBar(opts: {
+  mcpInputTokens: number;
+  mcpOutputTokens: number;
+  baselineTokens: number;
+  mcpCostUSD: number;
+  baselineCostUSD: number;
+  qualityScore?: number;
+  modelLabel: string;
+  iterations?: number;
+}): string {
+  const {
+    mcpInputTokens, mcpOutputTokens, baselineTokens,
+    mcpCostUSD, baselineCostUSD, qualityScore, modelLabel, iterations,
+  } = opts;
+
+  const mcpTokens = mcpInputTokens + mcpOutputTokens;
+  const maxTok    = Math.max(mcpTokens, baselineTokens, 1);
+  const maxCost   = Math.max(mcpCostUSD, baselineCostUSD, 0.000001);
+
+  function b(v: number, max: number, w = 20): string {
+    const f = Math.round((v / max) * w);
+    return BAR_FULL.repeat(f) + BAR_EMPTY.repeat(w - f);
+  }
+
+  const tokSave  = Math.round((1 - mcpTokens / Math.max(baselineTokens, 1)) * 100);
+  const costSave = Math.round((1 - mcpCostUSD / Math.max(baselineCostUSD, 0.000001)) * 100);
+  const iterLabel = iterations && iterations > 1 ? ` (${iterations}회 반복)` : "";
+
+  const lines: string[] = [
+    "```",
+    "┌─ 효율성 리포트 (vs Sonnet 기준선) " + "─".repeat(22) + "┐",
+    `│ 모델   ${modelLabel.padEnd(8)}${iterLabel}`,
+    "│",
+    `│ 토큰   Sonnet  ${b(baselineTokens, maxTok)}  ${baselineTokens.toLocaleString().padStart(6)}`,
+    `│        이 MCP  ${b(mcpTokens,      maxTok)}  ${mcpTokens.toLocaleString().padStart(6)}  ▼${Math.abs(tokSave)}%`,
+    "│",
+    `│ 비용   Sonnet  ${b(baselineCostUSD, maxCost)}  $${baselineCostUSD.toFixed(6)}`,
+    `│        이 MCP  ${b(mcpCostUSD,      maxCost)}  $${mcpCostUSD.toFixed(6)}  ▼${Math.abs(costSave)}%`,
+  ];
+
+  if (qualityScore != null) {
+    const q = Math.round(qualityScore * 100);
+    lines.push("│");
+    lines.push(`│ 품질   ${b(q, 100)}  ${q}%`);
+  }
+
+  lines.push("└" + "─".repeat(58) + "┘");
+  lines.push("```");
+
+  return "\n\n" + lines.join("\n");
+}
 
 function bar(value: number, max: number, width = BAR_WIDTH): string {
   const filled = Math.round((value / Math.max(max, 1)) * width);

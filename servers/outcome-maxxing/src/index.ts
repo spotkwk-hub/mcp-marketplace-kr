@@ -11,7 +11,7 @@ import { evaluateQuality, formatScore } from "./quality-eval.js";
 import { runGCRLoop, formatGCRReport } from "./gcr-loop.js";
 import { compressPrompt } from "./optimizer.js";
 import { saveEvaluation, getAggStats, getRecentEvaluations, getModelDistribution } from "./db.js";
-import { SessionStats } from "./visualize.js";
+import { SessionStats, inlineEfficiencyBar } from "./visualize.js";
 
 const client  = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const ucbState = createUCBState(1.4);
@@ -174,7 +174,18 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       timestamp: Date.now(),
     });
 
-    return { content: [{ type: "text", text: formatGCRReport(result) }] };
+    const bar = inlineEfficiencyBar({
+      mcpInputTokens:  result.totalInputTokens,
+      mcpOutputTokens: result.totalOutputTokens,
+      baselineTokens,
+      mcpCostUSD:      result.totalCostUSD,
+      baselineCostUSD: baselineCost,
+      qualityScore:    result.finalScore?.composite,
+      modelLabel:      lastIter?.modelLabel ?? "?",
+      iterations:      result.iterations.length,
+    });
+
+    return { content: [{ type: "text", text: formatGCRReport(result) + bar }] };
   }
 
   // ── ucb_query ─────────────────────────────────────────────────────────────
@@ -220,10 +231,19 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
       timestamp: Date.now(),
     });
 
+    const bar = inlineEfficiencyBar({
+      mcpInputTokens:  inp,
+      mcpOutputTokens: out,
+      baselineTokens,
+      mcpCostUSD:      costUSD,
+      baselineCostUSD: baselineCost,
+      modelLabel:      arm.label,
+    });
+
     return {
       content: [{
         type: "text",
-        text: `${text}\n\n---\n모델: ${arm.label} (UCB) | 토큰: ${inp}+${out} | 비용: $${costUSD.toFixed(6)}`,
+        text: `${text}${bar}`,
       }],
     };
   }
