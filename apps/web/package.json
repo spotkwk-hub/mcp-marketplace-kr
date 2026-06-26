@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@mcp-kr/registry": "*",
+    "@tosspayments/payment-widget-sdk": "^0.12.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.17.0",
     "next": "16.2.7",

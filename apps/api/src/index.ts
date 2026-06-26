@@ -18,7 +18,9 @@ import {
   type Category,
   type MCPServerMeta,
 } from '@mcp-kr/registry';
-import { getLikes, addLike } from './db.js';
+import { getLikes, addLike, upsertPayment, getPayment, getInvoicesByPayment } from './db.js';
+import { confirmPayment, verifyWebhookSecret, type TossWebhookEvent } from './payments/toss.js';
+import { issueInvoice } from './payments/invoice.js';
 
 const app = new Hono();
 
@@ -162,6 +164,129 @@ app.post('/servers/:id/like', async c => {
   const next  = addLike(id, delta);
   if (next === null) return c.json({ error: 'Server not found' }, 404);
   return c.json({ serverId: id, likes: next });
+});
+
+// ── 결제 승인  POST /payments/confirm ────────────────────
+// Body: { paymentKey, orderId, amount, buyerBizNo? }
+app.post('/payments/confirm', async c => {
+  const body = await c.req.json<{
+    paymentKey: string;
+    orderId: string;
+    amount: number;
+    buyerBizNo?: string;
+    itemName?: string;
+  }>();
+
+  if (!body.paymentKey || !body.orderId || !body.amount) {
+    return c.json({ error: 'paymentKey, orderId, amount 필수' }, 400);
+  }
+
+  let toss;
+  try {
+    toss = await confirmPayment(body.paymentKey, body.orderId, body.amount);
+  } catch (e: any) {
+    return c.json({ error: e.message, toss: e.toss }, e.status ?? 500);
+  }
+
+  upsertPayment({
+    paymentKey: toss.paymentKey,
+    orderId:    toss.orderId,
+    amount:     toss.totalAmount,
+    status:     toss.status,
+    buyerName:  toss.customerName,
+    buyerEmail: toss.customerEmail,
+    buyerBizNo: body.buyerBizNo,
+    method:     toss.method,
+    rawResponse: JSON.stringify(toss),
+  });
+
+  // 사업자 구매자면 즉시 세금계산서 발행 시도
+  if (body.buyerBizNo && toss.status === 'DONE') {
+    issueInvoice({
+      paymentKey:     toss.paymentKey,
+      recipientBizNo: body.buyerBizNo,
+      itemName:       body.itemName ?? toss.orderName,
+      totalAmount:    toss.totalAmount,
+    }).catch(err => console.error('[Invoice] auto-issue failed:', err));
+  }
+
+  return c.json({ ok: true, payment: toss });
+});
+
+// ── 토스 웹훅  POST /payments/webhook ─────────────────────
+app.post('/payments/webhook', async c => {
+  if (!verifyWebhookSecret(c.req.header('Authorization') ?? null)) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const event = await c.req.json<TossWebhookEvent>();
+  const { paymentKey, orderId, status } = event.data;
+
+  if (event.eventType === 'PAYMENT_STATUS_CHANGED' && status === 'DONE') {
+    const existing = getPayment(paymentKey);
+    if (existing) {
+      // 이미 confirm 처리됨 — 상태만 동기화
+      upsertPayment({
+        paymentKey, orderId,
+        amount:  event.data.totalAmount ?? existing.amount,
+        status,
+        buyerName:  existing.buyer_name ?? undefined,
+        buyerEmail: existing.buyer_email ?? undefined,
+        buyerBizNo: existing.buyer_biz_no ?? undefined,
+        method:     existing.method ?? undefined,
+        rawResponse: existing.raw_response ?? undefined,
+      });
+
+      if (existing.buyer_biz_no) {
+        const invoices = getInvoicesByPayment(paymentKey);
+        const alreadyIssued = invoices.some(i => i.status === 'ISSUED' || i.status === 'PENDING');
+        if (!alreadyIssued) {
+          issueInvoice({
+            paymentKey,
+            recipientBizNo: existing.buyer_biz_no,
+            itemName: 'MCP 서버 이용료',
+            totalAmount: existing.amount,
+          }).catch(err => console.error('[Invoice] webhook-issue failed:', err));
+        }
+      }
+    }
+  }
+
+  return c.json({ ok: true });
+});
+
+// ── 결제 조회  GET /payments/:key ─────────────────────────
+app.get('/payments/:key', c => {
+  const row = getPayment(c.req.param('key'));
+  if (!row) return c.json({ error: 'Not found' }, 404);
+  return c.json(row);
+});
+
+// ── 세금계산서 조회  GET /invoices/:paymentKey ────────────
+app.get('/invoices/:paymentKey', c => {
+  const invoices = getInvoicesByPayment(c.req.param('paymentKey'));
+  return c.json({ total: invoices.length, items: invoices });
+});
+
+// ── 세금계산서 수동 재발행  POST /invoices/:paymentKey/reissue ──
+app.post('/invoices/:paymentKey/reissue', async c => {
+  const paymentKey = c.req.param('paymentKey');
+  const payment = getPayment(paymentKey);
+  if (!payment) return c.json({ error: 'Payment not found' }, 404);
+  if (!payment.buyer_biz_no) return c.json({ error: '사업자번호 없음 — 세금계산서 발행 불가' }, 400);
+
+  const body = await c.req.json<{ itemName?: string }>().catch(() => ({ itemName: undefined }));
+  const result = await issueInvoice({
+    paymentKey,
+    recipientBizNo: payment.buyer_biz_no,
+    itemName: body.itemName ?? 'MCP 서버 이용료',
+    totalAmount: payment.amount,
+  });
+
+  return c.json(result.error
+    ? { ok: false, error: result.error }
+    : { ok: true, invoiceNo: result.invoiceNo }
+  );
 });
 
 // ── 서버 시작 ─────────────────────────────────────────────
