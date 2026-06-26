@@ -22,6 +22,10 @@ apps/**/out/
 # production
 /build
 packages/**/dist/
+servers/**/dist/
+servers/**/node_modules/
+servers/**/data/
+apps/api/data/
 
 # misc
 .DS_Store
