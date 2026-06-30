@@ -397,6 +397,48 @@ export const REGISTRY: MCPServerMeta[] = [
       { name: 'get_year_end_tax_docs',         description: '연말정산 간소화 자료 수집' },
     ],
   },
+
+  /* ── 보안 ───────────────────────────────────────────────── */
+  {
+    id: 'mcp-security-guardian',
+    name: 'MCP Security Guardian',
+    nameEn: 'MCP Security Guardian',
+    description: 'LLM/MCP 에이전트 보안 가드레일. 데이터 유출(API키·PII) 탐지, 의심스러운 외부 통신 차단, 악성 MCP 도구 정의 검출, 스케줄(트리거) 침투 차단을 자동화합니다.',
+    longDescription: [
+      '【4대 가드레일】',
+      '• scan_leak — API 키·시크릿·PII(이메일·전화번호·카드번호·private key) 탐지 및 자동 마스킹',
+      '• check_outbound — URL/텍스트 내 외부 통신을 허용목록·알려진 데이터유출 악용 서비스(webhook.site 등)·IP 리터럴 우회 기준으로 차단',
+      '• scan_mcp_tools — 연결하려는 외부 MCP 서버의 도구 정의(name/description/schema)에서 프롬프트 인젝션, 과도한 민감 파라미터 요구를 탐지',
+      '• check_schedule_action — 트리거/cron 생성·수정·삭제 요청이 사용자 직접 지시가 아닌 도구 출력·외부 콘텐츠를 경유해 침투했는지, 파괴적 동작이 예약되는지 검사',
+      '',
+      '【설계 원칙】',
+      '도구 호출 전후, 새 MCP 서버 연결 전, 스케줄 작업 생성 전에 호출해 1차 방어선으로 사용합니다.',
+      '정규식 기반 패턴 매칭으로 알려진 공격 패턴을 빠르게 차단하며, 우회 가능한 한계(인코딩·동의어 변형)는 README에 명시되어 있습니다.',
+    ].join('\n'),
+    category: '보안',
+    tags: ['프롬프트인젝션', '데이터유출방지', 'MCP보안', '가드레일', '스케줄침투차단', 'PII탐지'],
+    author: 'MCP 마켓플레이스 (시드)',
+    authorVerified: true,
+    version: '1.0.0',
+    stars: 0,
+    installs: 0,
+    pricing: 'free',
+    certs: [],
+    apiDocs: 'https://github.com/spotkwk-hub/mcp-marketplace-kr',
+    npmPackage: '@mcp-kr/mcp-security-guardian',
+    envVars: [],
+    featured: true,
+    publishedAt: '2026-07-01',
+    updatedAt: '2026-07-01',
+    likes: 0,
+    isSeed: true,
+    tools: [
+      { name: 'scan_leak',             description: 'API 키·시크릿·PII 유출 탐지 및 마스킹' },
+      { name: 'check_outbound',        description: 'URL/텍스트 내 외부 통신을 위험 패턴 기준으로 차단 판정' },
+      { name: 'scan_mcp_tools',        description: '외부 MCP 도구 정의의 프롬프트 인젝션·악성 패턴 검출' },
+      { name: 'check_schedule_action', description: '스케줄(트리거) 침투·파괴적 동작 예약 차단' },
+    ],
+  },
 ];
 
 // ─── 유틸리티 ────────────────────────────────────────────────

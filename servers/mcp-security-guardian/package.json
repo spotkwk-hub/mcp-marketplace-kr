@@ -1,0 +1,33 @@
+{
+  "name": "@mcp-kr/mcp-security-guardian",
+  "version": "1.0.0",
+  "description": "LLM/MCP 보안 가드레일 MCP 서버 — 데이터 유출 탐지, 의심 외부 통신 차단, 악성 MCP 도구 정의 검출, 스케줄(트리거) 침투 차단",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": { "mcp-security-guardian": "dist/index.js" },
+  "files": ["dist"],
+  "engines": { "node": ">=18" },
+  "keywords": ["mcp", "security", "guardrail", "prompt-injection", "data-leak", "korean"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/spotkwk-hub/mcp-marketplace-kr.git",
+    "directory": "servers/mcp-security-guardian"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build",
+    "test": "node --test --experimental-strip-types test/*.test.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}
